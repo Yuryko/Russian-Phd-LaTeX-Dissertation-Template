@@ -14,21 +14,16 @@
 \newif\ifsynopsis           % Условие, проверяющее, что документ --- автореферат
 
 \RequirePackage{etoolbox}[2015/08/02]               % Для продвинутой проверки разных условий
+\providebool{presentation}
 
 %%% Поля и разметка страницы %%%
 \usepackage{pdflscape}                              % Для включения альбомных страниц
 \usepackage{geometry}                               % Для последующего задания полей
 
 %%% Математические пакеты %%%
-\usepackage{amsthm,amsmath,amscd}       % Математические дополнения от AMS
-\ifxetexorluatex
-    \usepackage{amsfonts,amssymb}       % Математические дополнения от AMS
-\else
-    \ifnumequal{\value{usealtfont}}{2}{}{
-        \usepackage{amsfonts,amssymb}       % Математические дополнения от AMS
-    }
-\fi
-\usepackage{mathtools}                  % Добавляет окружение multlined
+\usepackage{amsthm,amsmath,amscd}   % Математические дополнения от AMS
+\usepackage{amsfonts,amssymb}       % Математические дополнения от AMS
+\usepackage{mathtools}              % Добавляет окружение multlined
 
 %%%% Установки для размера шрифта 14 pt %%%%
 %% Формирование переменных и констант для сравнения (один раз для всех подключаемых файлов)%%
@@ -38,7 +33,7 @@
 \setlength{\bigtextsize}{13.9pt}
 
 \makeatletter
-%\show\f@size                                       % неплохо для отслеживания, но вызывает стопорение процесса, если документ компилируется без команды  -interaction=nonstopmode 
+%\show\f@size                                       % неплохо для отслеживания, но вызывает стопорение процесса, если документ компилируется без команды  -interaction=nonstopmode
 \setlength{\curtextsize}{\f@size pt}
 \makeatother
 
@@ -47,15 +42,16 @@
     \usepackage{polyglossia}[2014/05/21]            % Поддержка многоязычности (fontspec подгружается автоматически)
 \else
    %%% Решение проблемы копирования текста в буфер кракозябрами
-    \ifnumequal{\value{usealtfont}}{1}{% Используется pscyr, при наличии
-        \IfFileExists{pscyr.sty}{% вероятно, без pscyr нет необходимости в этом коде
-            \input glyphtounicode.tex
-            \input glyphtounicode-cmr.tex %from pdfx package
-            \pdfgentounicode=1
-        }{}
-    }{}
+    \ifnumequal{\value{usealtfont}}{0}{}{
+        \input glyphtounicode.tex
+        \input glyphtounicode-cmr.tex %from pdfx package
+        \pdfgentounicode=1
+    }
     \usepackage{cmap}                               % Улучшенный поиск русских слов в полученном pdf-файле
-    \defaulthyphenchar=127                          % Если стоит до fontenc, то переносы не впишутся в выделяемый текст при копировании его в буфер обмена 
+    \ifnumequal{\value{usealtfont}}{2}{}{
+        \defaulthyphenchar=127                      % Если стоит до fontenc, то переносы не впишутся в выделяемый текст при копировании его в буфер обмена
+    }
+    \usepackage{textcomp}
     \usepackage[T1,T2A]{fontenc}                    % Поддержка русских букв
     \ifnumequal{\value{usealtfont}}{1}{% Используется pscyr, при наличии
         \IfFileExists{pscyr.sty}{\usepackage{pscyr}}{}  % Подключение pscyr
@@ -64,8 +60,9 @@
     \usepackage[english, russian]{babel}[2014/03/24]% Языки: русский, английский
     \ifnumequal{\value{usealtfont}}{2}{
         % http://dxdy.ru/post1238763.html#p1238763
-        \usepackage[scaled=0.925]{XCharter}[2017/06/25] % Подключение русифицированных шрифтов XCharter
-        \usepackage[bitstream-charter]{mathdesign} % Согласование математических шрифтов
+        \usepackage[scaled=0.960]{XCharter}[2017/12/19] % Подключение русифицированных шрифтов XCharter
+        \usepackage[charter, vvarbb, scaled=1.048]{newtxmath}[2017/12/14]
+        \setDisplayskipStretch{-0.078}
     }{}
 \fi
 
@@ -73,7 +70,10 @@
 \usepackage{indentfirst}                            % Красная строка
 
 %%% Цвета %%%
-\usepackage[dvipsnames, table, hyperref, cmyk]{xcolor} % Совместимо с tikz. Конвертация всех цветов в cmyk заложена как удовлетворение возможного требования типографий. Возможно конвертирование и в rgb.
+\ifpresentation
+\else
+    \usepackage[dvipsnames, table, hyperref]{xcolor} % Совместимо с tikz
+\fi
 
 %%% Таблицы %%%
 \usepackage{longtable,ltcaption}                    % Длинные таблицы
@@ -82,7 +82,18 @@
 %%% Общее форматирование
 \usepackage{soulutf8}                               % Поддержка переносоустойчивых подчёркиваний и зачёркиваний
 \usepackage{icomma}                                 % Запятая в десятичных дробях
-\usepackage[hyphenation, lastparline]{impnattypo}   % Оптимизация расстановки переносов и длины последней строки абзаца
+
+%%% Оптимизация расстановки переносов и длины последней строки абзаца
+\ifluatex
+    \ifnumequal{\value{draft}}{1}{% Черновик
+        \usepackage[hyphenation, lastparline, nosingleletter, homeoarchy,
+        rivers, draft]{impnattypo}
+    }{% Чистовик
+        \usepackage[hyphenation, lastparline, nosingleletter]{impnattypo}
+    }
+\else
+    \usepackage[hyphenation, lastparline]{impnattypo}
+\fi
 
 %%% Гиперссылки %%%
 \usepackage{hyperref}[2012/11/06]
@@ -90,22 +101,22 @@
 %%% Изображения %%%
 \usepackage{graphicx}[2014/04/25]                   % Подключаем пакет работы с графикой
 
-%%% Списки %%%
-\usepackage{enumitem}
-
 %%% Счётчики %%%
 \usepackage[figure,table]{totalcount}               % Счётчик рисунков и таблиц
 \usepackage{totcount}                               % Пакет создания счётчиков на основе последнего номера подсчитываемого элемента (может требовать дважды компилировать документ)
 \usepackage{totpages}                               % Счётчик страниц, совместимый с hyperref (ссылается на номер последней страницы). Желательно ставить последним пакетом в преамбуле
 
 %%% Продвинутое управление групповыми ссылками (пока только формулами) %%%
-\ifxetexorluatex
-    \usepackage{cleveref}                           % cleveref корректно считывает язык из настроек polyglossia
+\ifpresentation
 \else
-    \usepackage[russian]{cleveref}                  % cleveref имеет сложности со считыванием языка из babel. Такое решение русификации вывода выбрано вместо определения в documentclass из опасности что-то лишнее передать во все остальные пакеты, включая библиографию.
+    \ifxetexorluatex
+        \usepackage{cleveref}                           % cleveref корректно считывает язык из настроек polyglossia
+    \else
+        \usepackage[russian]{cleveref}                  % cleveref имеет сложности со считыванием языка из babel. Такое решение русификации вывода выбрано вместо определения в documentclass из опасности что-то лишнее передать во все остальные пакеты, включая библиографию.
+    \fi
+    \creflabelformat{equation}{#2#1#3}                  % Формат по умолчанию ставил круглые скобки вокруг каждого номера ссылки, теперь просто номера ссылок без какого-либо дополнительного оформления
+    \crefrangelabelformat{equation}{#3#1#4\cyrdash#5#2#6}   % Интервалы в русском языке принято делать через тире, если иное не оговорено
 \fi
-\creflabelformat{equation}{#2#1#3}                  % Формат по умолчанию ставил круглые скобки вокруг каждого номера ссылки, теперь просто номера ссылок без какого-либо дополнительного оформления
-\crefrangelabelformat{equation}{#3#1#4\cyrdash#5#2#6}   % Интервалы в русском языке принято делать через тире, если иное не оговорено
 
 
 \ifnumequal{\value{draft}}{1}{% Черновик
